@@ -2,17 +2,23 @@
 
 import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
+import { error } from "console";
 
 type Post = {
   id: number;
   content: string;
   created_at: string;
+  name?: string; // ？は任意という意味。必須項目ではなく、あっても無くても良いやつという意味。
 };
 
 export default function Home() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPost, setNewPost] = useState("");
   const [loading, setLoading] = useState(false);
+  const [name, setName] = useState("");
+  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editContent, setEditContent] = useState("");
+  const [editName, setEditName] = useState("");
 
   useEffect(() => {
     fetchPosts();
@@ -31,7 +37,10 @@ export default function Home() {
     if (!newPost.trim()) return;
     setLoading(true);
 
-    const { error } = await supabase.from("posts").insert({ content: newPost });
+    const { error } = await supabase.from("posts").insert({
+      content: newPost,
+      name: name.trim() || null,
+    });
 
     if (!error) {
       setNewPost("");
@@ -47,6 +56,24 @@ export default function Home() {
     if (!error) fetchPosts();
   };
 
+  const handleEdit = (post: Post) => {
+    setEditingId(post.id);
+    setEditContent(post.content);
+    setEditName(post.name || "");
+  };
+
+  const handleUpdate = async () => {
+    const { error } = await supabase
+      .from("posts")
+      .update({ content: editContent, name: editName.trim() || null })
+      .eq("id", editingId);
+
+    if (!error) {
+      setEditingId(null);
+      fetchPosts();
+    }
+  };
+
   return (
     <>
       <div className="max-w-xl mx-auto px-4 py-8">
@@ -55,10 +82,16 @@ export default function Home() {
           <textarea
             value={newPost}
             onChange={(e) => setNewPost(e.target.value)}
-            placeholder="東京内容を入力..."
-            className="w-full p-3 border rounded resize-none"
+            placeholder="投稿内容を入力..."
+            className="w-full p-3 border rounded resize-none mb-2"
             rows={3}
           ></textarea>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="名前（任意）"
+            className="w-full p-2 border rounded mb-2"
+          />
           <button
             type="submit"
             disabled={loading}
@@ -71,18 +104,64 @@ export default function Home() {
         <ul className="space-y-4">
           {posts.map((post) => (
             <li key={post.id} className="p-4 border rounded shadow">
-              <p>{post.content}</p>
-              <div className="flex justify-between">
-                <span className="text-sm text-gray-500 block mt-2">
-                  投稿日： {new Date(post.created_at).toLocaleString("ja-JP")}
-                </span>
-                <button
-                  onClick={() => handleDeleta(post.id)}
-                  className="bg-red-500 hover:bg-red-300 text-white py-1 px-2 rounded text-sm"
-                >
-                  削除
-                </button>
-              </div>
+              {editingId === post.id ? (
+                <>
+                  <textarea
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                    className="border w-full mb-2"
+                  ></textarea>
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="border w-full mb-2"
+                    placeholder="投稿者名を入力"
+                  />
+                  <div>
+                    <button
+                      onClick={handleUpdate}
+                      className="bg-green-600 hover:bg-green-500 text-white py-1 px-2 rounded text-sm mr-2"
+                    >
+                      更新
+                    </button>
+                    <button
+                      onClick={() => setEditingId(null)}
+                      className="bg-gray-500 hover:bg-gray-300 text-white py-1 px-2 rounded text-sm"
+                    >
+                      キャンセル
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p>{post.content}</p>
+                  <div className="flex justify-between">
+                    <div className="text-sm text-gray-500 mt-2 flex gap-6">
+                      <span>
+                        {post.name ? `投稿者：${post.name}` : `投稿者；匿名`}
+                      </span>
+                      <span>
+                        投稿日：{" "}
+                        {new Date(post.created_at).toLocaleString("ja-JP")}
+                      </span>
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => handleEdit(post)}
+                        className="bg-green-600 hover:bg-green-500 text-white py-1 px-2 rounded text-sm mr-2"
+                      >
+                        編集
+                      </button>
+                      <button
+                        onClick={() => handleDeleta(post.id)}
+                        className="bg-red-500 hover:bg-red-300 text-white py-1 px-2 rounded text-sm"
+                      >
+                        削除
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>
