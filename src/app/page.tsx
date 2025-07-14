@@ -15,7 +15,7 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // fetchPosts()
+    fetchPosts();
   }, []);
 
   const fetchPosts = async () => {
@@ -39,6 +39,12 @@ export default function Home() {
     }
 
     setLoading(false);
+  };
+
+  const handleDeleta = async (id: number) => {
+    const { error } = await supabase.from("posts").delete().eq("id", id);
+
+    if (!error) fetchPosts();
   };
 
   return (
@@ -66,9 +72,17 @@ export default function Home() {
           {posts.map((post) => (
             <li key={post.id} className="p-4 border rounded shadow">
               <p>{post.content}</p>
-              <span className="text-sm text-gray-500 block mt-2">
-                投稿日： {new Date(post.created_at).toLocaleString("ja-JP")}
-              </span>
+              <div className="flex justify-between">
+                <span className="text-sm text-gray-500 block mt-2">
+                  投稿日： {new Date(post.created_at).toLocaleString("ja-JP")}
+                </span>
+                <button
+                  onClick={() => handleDeleta(post.id)}
+                  className="bg-red-500 hover:bg-red-300 text-white py-1 px-2 rounded text-sm"
+                >
+                  削除
+                </button>
+              </div>
             </li>
           ))}
         </ul>
