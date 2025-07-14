@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import { error } from "console";
 import toast from "react-hot-toast";
+import PostForm from "@/components/PostForm";
 
 type Post = {
   id: number;
@@ -96,28 +97,14 @@ export default function Home() {
     <>
       <div className="max-w-xl mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">掲示板アプリ</h1>
-        <form onSubmit={handleSubmit} className="mb-6">
-          <textarea
-            value={newPost}
-            onChange={(e) => setNewPost(e.target.value)}
-            placeholder="投稿内容を入力..."
-            className="w-full p-3 border rounded resize-none mb-2"
-            rows={3}
-          ></textarea>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="名前（任意）"
-            className="w-full p-2 border rounded mb-2"
-          />
-          <button
-            type="submit"
-            disabled={loading}
-            className="mt-2 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
-          >
-            投稿
-          </button>
-        </form>
+        <PostForm
+          onSubmit={handleSubmit}
+          value={newPost}
+          setValue={setNewPost}
+          name={name}
+          setName={setName}
+          loading={loading}
+        />
 
         <ul className="space-y-4">
           {posts.map((post) => (
